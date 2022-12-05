@@ -13,21 +13,21 @@ def RegEX(string):
     return re.sub('\u0304', '', file_1_str)
 
 # data= pd.read_csv('LatLibFakeRankings.csv', encoding= 'latin_1')
-data= pd.read_csv('LatLibDates-Downsampled.csv', encoding= 'latin_1')
+data= pd.read_csv('LatLibDates-Filtered.csv', encoding= 'latin_1')
 
 # data.drop(['Unnamed: 2','Unnamed: 3','Unnamed: 4'], axis=1, inplace=True)
 data.rename(columns={'V1': 'Text', 'V2': 'Target'}, inplace=True)
 
 # data['Target']=data['Target'].map({'Easy': 0, 'Medium': 1, 'Hard': 2})
 
-# data = data.loc[:200]
+data = data.loc[:400]
 # print(data)
 
 from keras.preprocessing.text import Tokenizer
 from keras_preprocessing.sequence import pad_sequences
 
 texts = data['Text']
-# labels = data['Target'].astype('category')
+labels = data['Target'].astype('category')
 labels = data['Target']
 
 # for i in range(len(labels)):
@@ -58,7 +58,7 @@ print("number of labels: ", len(labels))
 print(texts[0])
 
 # os.chdir('/home/paul/DeepL/Final/POST')
-limit = 200
+limit = 2000
 os.chdir('LatLib')
 for i in range(len(texts)):
     if "/" in texts[i]:
@@ -213,10 +213,10 @@ def gen_conf_matrix(model, x_test, y_test):
 
     ## Get Class Labels
 
-    class_names = [1,2,3,4,5,6,7,8]
+    class_names = [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27]
 
     # Plot confusion matrix in a beautiful manner
-    fig = plt.figure(figsize=(6, 6))
+    fig = plt.figure(figsize=(27, 27))
     ax= plt.subplot()
     sns.heatmap(cm, annot=True, ax = ax, fmt = 'g'); #annot=True to annotate cells
     # labels, title and ticks
@@ -256,64 +256,26 @@ from keras.initializers import Constant
 # x = layers.Bidirectional(layers.LSTM(120, return_sequences=True))(embedded_sequences)
 # x = layers.Bidirectional(layers.LSTM(120))(x)
 # # before = layers.Dense(20, activation="relu")(x)
-# preds = layers.Dense(9, activation="softmax")(x)
+# preds = layers.Dense(7, activation="softmax")(x)
 # model = Model(int_sequences_input, preds)
 
 
 #define model
-# model = Sequential()
-
-# embedding_layer = Embedding(vocab_size, EMBEDDING_SIZE,
-#                             embeddings_initializer= Constant(embedding_matrix), 
-#                             trainable=False,input_length = 38
-# )
-# model.add(embedding_layer)
-# # model.add(LSTM(128, activation ='relu'))
-# # model.add(LSTM(32, input_shape=(None,128), activation ='relu'))
-# model.add(Dense(128, activation='relu'))
-# # model.add(Dropout(0.2))
-# model.add(Dense(32, activation='relu'))
-# # model.add(Dense(32, activation='relu'))
-# model.add(Flatten())   #add Flatten layer 
-# model.add(Dense(9, activation='softmax'))
-
-
-# model = Sequential()
-
-# # model.add(Dense(128, input_shape=(38,), activation='relu'))
-# model.add(Dense(128, activation='relu'))
-# model.add(Dense(32, activation='relu'))
-# model.add(Flatten())   #add Flatten layer 
-# model.add(Dense(9, activation='softmax'))
-
-
-# model = Sequential()
-
-# embedding_size = 300  #each word onto a 32 length real valued vector
-# model.add(Embedding(input_dim = 1000, output_dim = embedding_size, input_length = 38)) #try 100, 200, single LSTM and single dense 100
-# model.add(LSTM(100))
-# #model.add(LSTM(64))
-# #model.add(GlobalMaxPool1D())
-# #model.add(Dropout(0.5))
-# model.add(Dense(64, activation='relu'))
-# model.add(Dropout(0.5))
-# model.add(Dense(16, activation='relu'))
-# #model.add(Flatten())   #add Flatten layer 
-# model.add(Dense(9, activation='softmax'))
-
 model = Sequential()
-model.add(Dense(128, input_shape=(38,), activation='relu'))
-model.add(LSTM(100,activation= 'relu'))
-#model.add(LSTM(64))
-#model.add(GlobalMaxPool1D())
-#model.add(Dropout(0.5))
-model.add(Dense(64, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(16, activation='relu'))
-#model.add(Flatten())   #add Flatten layer 
-model.add(Dense(9, activation='softmax'))
 
-
+embedding_layer = Embedding(vocab_size, EMBEDDING_SIZE,
+                            embeddings_initializer= Constant(embedding_matrix), 
+                            trainable=False,input_length = 314
+)
+model.add(embedding_layer)
+model.add(LSTM(128, activation ='relu'))
+# model.add(LSTM(32, input_shape=(None,128), activation ='relu'))
+model.add(Dense(128, activation='relu'))
+# model.add(Dropout(0.2))
+model.add(Dense(32, activation='relu'))
+# model.add(Dense(32, activation='relu'))
+model.add(Flatten())   #add Flatten layer 
+model.add(Dense(28, activation='softmax'))
 
 
 # summarize the model
@@ -329,7 +291,7 @@ model.compile(loss = 'categorical_crossentropy', optimizer ='adam',metrics = ["a
 
 # history = model.fit(X_train, Y_train, epochs = 10, batch_size = 100, callbacks = [checkpoint])
 
-history = model.fit(X_train, Y_train, epochs = 100, batch_size = 128)
+history = model.fit(X_train, Y_train, epochs = 5, batch_size = 128)
 
 #Full
 print("Score of the total test data")
