@@ -5,91 +5,38 @@ import re
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-def RegEX(string):
-    file_1_str = re.sub(r"[([{})]]", "", string) #removing brackets
-    file_1_str = re.sub("\d+", "", file_1_str) #removing numbers
-    file_1_str = re.sub(r"\s+", " ", file_1_str)#removing tabs
-    file_1_str = re.sub(r'[^\w\s]', '', file_1_str)#remove punc
-    return re.sub('\u0304', '', file_1_str)
+data= pd.read_csv('Final_Rank_Balanced.csv', encoding= 'latin_1')
 
-# data= pd.read_csv('LatLibFakeRankings.csv', encoding= 'latin_1')
-data= pd.read_csv('LatLibDates-Downsampled.csv', encoding= 'latin_1')
 
-# data.drop(['Unnamed: 2','Unnamed: 3','Unnamed: 4'], axis=1, inplace=True)
 data.rename(columns={'V1': 'Text', 'V2': 'Target'}, inplace=True)
-
-# data['Target']=data['Target'].map({'Easy': 0, 'Medium': 1, 'Hard': 2})
-
-# data = data.loc[:200]
-# print(data)
 
 from keras.preprocessing.text import Tokenizer
 from keras_preprocessing.sequence import pad_sequences
 
+# data = data.sample(frac=1,random_state=1).reset_index()
+# print(data.head())
+# print(shuffled.head())
+
+
 texts = data['Text']
-# labels = data['Target'].astype('category')
 labels = data['Target']
 
-# for i in range(len(labels)):
-#     if labels[i] <= 5.99:
-#         labels[i] = 1
-#     elif 6 <= labels[i] <= 8.99:
-#         labels[i] = 2
-#     elif 9 <= labels[i] <= 10.99:
-#         labels[i] = 3
-#     elif 11 <= labels[i] <= 14.99:
-#         labels[i] = 4
-#     elif 15 <= labels[i] <= 18.99:
-#         labels[i] = 5
-#     elif 19 <= labels[i] <= 27.99:
-#         labels[i] = 6
-
-# print(labels)
-# import sys
-# sys.exit()
-
-from keras.utils import to_categorical
+from tensorflow.keras.utils import to_categorical
 labels = to_categorical(labels)
 
 print("number of texts :" , len(texts))
 print("number of labels: ", len(labels))
 
-
-print(texts[0])
-
-# os.chdir('/home/paul/DeepL/Final/POST')
-limit = 200
-os.chdir('LatLib')
+os.chdir('Final-LatLib2')
 for i in range(len(texts)):
-    if "/" in texts[i]:
-        s = texts[i]
-        s = s.split('/')
-        s1 = s[0]
-        s2 = s[1]
-        os.chdir(s1)
-        with open(s2,'r') as f:
-            New_texts = f.read()
-        # texts[i] = New_texts
-        texts[i] = New_texts[:limit]
-        os.chdir('..')
-        # print(f"Sub{i}")
-    else:  
-        with open(texts[i],'r') as f:
-            New_texts = f.read()
-        # texts[i] = New_texts
-        texts[i] = New_texts[:limit]
-        # print(f"YEE{i}")
-
-# print(texts[0])
-for i in range(len(texts)):
-    texts[i] = RegEX(texts[i]) 
-# print("HOWDY")  
-# print(texts[0])   
-# import sys
-# sys.exit()
+    with open(texts[i],'r') as f:
+        New_texts = f.read()
+    texts[i] = New_texts[:500]
 
 from sklearn import preprocessing
 import numpy as np
+
+print(texts[1])
 
 
 tokenizer = Tokenizer()
@@ -104,26 +51,12 @@ print("Found {0} unique words: ".format(len(word_index)))
 
 seqs = pad_sequences(sequences)
 
-normalized_arr = preprocessing.normalize(seqs)
-seqs = normalized_arr
-# print(seqs)
-
 print("data shape: ", seqs.shape)
-
-#10. Read the embeddings in the pretrained model 
-
-
-# import json
-
-# os.chdir('..')
-# with open('output.txt', 'w') as filehandle:
-#     json.dump(seqs.tolist(), filehandle)
-
+print(seqs[1])
 # import sys
 # sys.exit()
-
-# path_to_glove_file = "glove.6B.100d.txt"
-path_to_word2vec_file = '/home/paul/DeepL/Final/Word2Vec.vec'
+os.chdir('..')
+path_to_word2vec_file = 'Word2Vec.vec'
 
 embeddings_index = {}
 with open(path_to_word2vec_file) as f:
@@ -142,7 +75,6 @@ for word, i in tokenizer.word_index.items():
         embedding_matrix[i] = embedding_vector
 
 print(embedding_matrix.shape)
-
 
 #Splitting the data
 from sklearn.model_selection import train_test_split
@@ -185,26 +117,7 @@ from sklearn.metrics import confusion_matrix, classification_report
 
 def gen_conf_matrix(model, x_test, y_test):
 
-    # p_pred = model.predict(x_test)
-    # # p_pred = p_pred.flatten()
-    # # print(p_pred.round(2))
-    # # [1. 0.01 0.91 0.87 0.06 0.95 0.24 0.58 0.78 ...
-
-    # # extract the predicted class labels
-    # # y_pred = np.where(p_pred > 0.5)
-    # # y_pred = (p_pred > 0.5)
-    # y_pred = p_pred
-    # # print(y_pred)
-    # # [1 0 1 1 0 1 0 1 1 0 0 0 0 1 1 0 1 0 0 0 0 ...
-
-    # print("Confusion Matrix")
-    # # print(confusion_matrix(y_test, y_pred))
-    # print(confusion_matrix(y_test.argmax(axis=1), y_pred.argmax(axis=1)))
-    # print(classification_report(y_test, y_pred))
-
     predictions = model.predict(x_test, steps=len(x_test), verbose=0)
-    #y_pred=model.predict(x_test)
-    #y_pred = np.round(y_pred)
     y_pred = np.argmax(predictions, axis=-1)
 
     y_true=np.argmax(y_test, axis=-1)
@@ -232,9 +145,8 @@ def gen_conf_matrix(model, x_test, y_test):
 
     plt.title('Refined Confusion Matrix', fontsize=20)
 
-    plt.savefig('ConMat24.png')
+    plt.savefig('Final_50epoch_500ch.png')
     plt.show()
-# define the model LSTM
 
 EMBEDDING_SIZE = 300
 
@@ -246,72 +158,20 @@ from keras.layers import Dense, Flatten
 from keras.layers import Embedding
 from keras.initializers import Constant
 
-# embedding_layer = Embedding(vocab_size, EMBEDDING_SIZE,
-#                             embeddings_initializer= Constant(embedding_matrix), 
-#                             trainable=False,
-# )
 
-# int_sequences_input = Input(shape=(None,), dtype="int64")
-# embedded_sequences = embedding_layer(int_sequences_input)
-# x = layers.Bidirectional(layers.LSTM(120, return_sequences=True))(embedded_sequences)
-# x = layers.Bidirectional(layers.LSTM(120))(x)
-# # before = layers.Dense(20, activation="relu")(x)
-# preds = layers.Dense(9, activation="softmax")(x)
-# model = Model(int_sequences_input, preds)
+embedding_layer = Embedding(vocab_size, EMBEDDING_SIZE,
+                            embeddings_initializer= Constant(embedding_matrix), 
+                            trainable=False,
+)
 
+int_sequences_input = Input(shape=(None,), dtype="int64")
+embedded_sequences = embedding_layer(int_sequences_input)
+x = layers.Bidirectional(layers.LSTM(1024, return_sequences=True))(embedded_sequences)
+x = layers.Bidirectional(layers.LSTM(1024))(x)
+# before = layers.Dense(20, activation="relu")(x)
+preds = layers.Dense(9, activation="softmax")(x)
+model = Model(int_sequences_input, preds)
 
-#define model
-# model = Sequential()
-
-# embedding_layer = Embedding(vocab_size, EMBEDDING_SIZE,
-#                             embeddings_initializer= Constant(embedding_matrix), 
-#                             trainable=False,input_length = 38
-# )
-# model.add(embedding_layer)
-# # model.add(LSTM(128, activation ='relu'))
-# # model.add(LSTM(32, input_shape=(None,128), activation ='relu'))
-# model.add(Dense(128, activation='relu'))
-# # model.add(Dropout(0.2))
-# model.add(Dense(32, activation='relu'))
-# # model.add(Dense(32, activation='relu'))
-# model.add(Flatten())   #add Flatten layer 
-# model.add(Dense(9, activation='softmax'))
-
-
-# model = Sequential()
-
-# # model.add(Dense(128, input_shape=(38,), activation='relu'))
-# model.add(Dense(128, activation='relu'))
-# model.add(Dense(32, activation='relu'))
-# model.add(Flatten())   #add Flatten layer 
-# model.add(Dense(9, activation='softmax'))
-
-
-# model = Sequential()
-
-# embedding_size = 300  #each word onto a 32 length real valued vector
-# model.add(Embedding(input_dim = 1000, output_dim = embedding_size, input_length = 38)) #try 100, 200, single LSTM and single dense 100
-# model.add(LSTM(100))
-# #model.add(LSTM(64))
-# #model.add(GlobalMaxPool1D())
-# #model.add(Dropout(0.5))
-# model.add(Dense(64, activation='relu'))
-# model.add(Dropout(0.5))
-# model.add(Dense(16, activation='relu'))
-# #model.add(Flatten())   #add Flatten layer 
-# model.add(Dense(9, activation='softmax'))
-
-model = Sequential()
-model.add(Dense(128, input_shape=(38,), activation='relu'))
-model.add(LSTM(100,activation= 'relu'))
-#model.add(LSTM(64))
-#model.add(GlobalMaxPool1D())
-#model.add(Dropout(0.5))
-model.add(Dense(64, activation='relu'))
-model.add(Dropout(0.5))
-model.add(Dense(16, activation='relu'))
-#model.add(Flatten())   #add Flatten layer 
-model.add(Dense(9, activation='softmax'))
 
 
 
@@ -329,7 +189,7 @@ model.compile(loss = 'categorical_crossentropy', optimizer ='adam',metrics = ["a
 
 # history = model.fit(X_train, Y_train, epochs = 10, batch_size = 100, callbacks = [checkpoint])
 
-history = model.fit(X_train, Y_train, epochs = 100, batch_size = 128)
+history = model.fit(X_train, Y_train, epochs = 50, batch_size = 32)
 
 #Full
 print("Score of the total test data")
